@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!-- Debug version to identify template issues -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8s Pretty Logger</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{[ url_for('static', filename='css/style.css') ]}">
+</head>
+<body>
+    <div id="app" class="container-fluid">
+        <div class="row py-3 border-bottom bg-light">
+            <div class="col">
+                <h1 class="h4 mb-0">
+                    <i class="bi bi-kubernetes text-primary"></i> 
+                    K8s Pretty Logger
+                </h1>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <!-- Sidebar -->
+            <div class="col-md-3 border-end">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Kubernetes Context</label>
+                    <div class="d-flex">
+                        <select 
+                            class="form-select form-select-sm me-2" 
+                            v-model="selectedContext"
+                            :disabled="loading.contexts">
+                            <option v-for="context in contexts" :value="context.name" :key="context.name">
+                                {{ context.name }}
+                            </option>
+                        </select>
+                        <button 
+                            class="btn btn-sm btn-outline-primary" 
+                            @click="setContext" 
+                            :disabled="loading.contexts || loading.setContext">
+                            <i class="bi" :class="loading.setContext ? 'bi-hourglass' : 'bi-check-lg'"></i>
+                        </button>
+                    </div>
+                    <div v-if="loading.contexts" class="text-muted small mt-1">
+                        <i class="bi bi-hourglass"></i> Loading contexts...
+                    </div>
+                    <div v-if="errors.contexts" class="text-danger small mt-1">
+                        {{ errors.contexts }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Namespace</label>
+                    <select 
+                        class="form-select form-select-sm" 
+                        v-model="selectedNamespace"
+                        @change="loadPods"
+                        :disabled="loading.namespaces">
+                        <option v-for="ns in namespaces" :value="ns.name" :key="ns.name">
+                            {{ ns.name }}
+                        </option>
+                    </select>
+                    <div v-if="loading.namespaces" class="text-muted small mt-1">
+                        <i class="bi bi-hourglass"></i> Loading namespaces...
+                    </div>
+                    <div v-if="errors.namespaces" class="text-danger small mt-1">
+                        {{ errors.namespaces }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Pods</label>
+                        <button 
+                            class="btn btn-sm btn-outline-secondary" 
+                            @click="loadPods" 
+                            :disabled="loading.pods">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div v-if="loading.pods" class="text-muted small">
+                        <i class="bi bi-hourglass"></i> Loading pods...
+                    </div>
+                    <div v-else-if="errors.pods" class="text-danger small">
+                        {{ errors.pods }}
+                    </div>
+                    <div v-else-if="pods.length === 0" class="text-muted small">
+                        No pods found in this namespace
+                    </div>
+                    <div v-else class="pod-list">
+                        <div 
+                            v-for="pod in pods" 
+                            :key="pod.name" 
+                            class="pod-item mb-2 p-2 border rounded"
+                            :class="{'active': selectedPod && selectedPod.name === pod.name}"
+                            @click="selectPod(pod)">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="pod-name text-truncate">{{ pod.name }}</div>
+                                    <div class="pod-status small">
+                                        <span :class="getPodStatusClass(pod.status)">{{ pod.status }}</span>
+                                    </div>
+                                </div>
+                                <div class="pod-age small text-muted">
+                                    {{ pod.creation_timestamp }}
+                                </div>
+                            </div>
+                            <div class="container-list small mt-1" v-if="pod.containers && pod.containers.length">
+                                <div 
+                                    v-for="container in pod.containers" 
+                                    :key="container.name"
+                                    class="container-item d-flex align-items-center">
+                                    <span 
+                                        class="container-status me-1" 
+                                        :class="getContainerStatusClass(container.status)">
+                                    </span>
+                                    <span class="container-name text-truncate">{{ container.name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div v-if="!selectedPod" class="text-center text-muted mt-5">
+                    <i class="bi bi-kubernetes display-1"></i>
+                    <h2 class="h4 mt-3">Select a pod to view logs</h2>
+                    <p>Choose a namespace and pod from the sidebar to start streaming logs</p>
+                </div>
+                <div v-else>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="h5 mb-0">
+                                {{ selectedPod.name }}
+                                <span class="badge ms-2" :class="getPodStatusClass(selectedPod.status)">
+                                    {{ selectedPod.status }}
+                                </span>
+                            </h2>
+                            <div class="text-muted small">
+                                Namespace: {{ selectedPod.namespace }}
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="me-2">
+                                <select 
+                                    v-if="selectedPod.containers && selectedPod.containers.length > 1" 
+                                    v-model="selectedContainer"
+                                    class="form-select form-select-sm">
+                                    <option v-for="container in selectedPod.containers" :value="container.name">
+                                        {{ container.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button 
+                                    class="btn" 
+                                    :class="autoScroll ? 'btn-primary' : 'btn-outline-primary'"
+                                    @click="toggleAutoScroll"
+                                    title="Auto-scroll">
+                                    <i class="bi bi-arrow-down-square"></i>
+                                </button>
+                                <button 
+                                    class="btn" 
+                                    :class="logStreaming ? 'btn-danger' : 'btn-success'"
+                                    @click="toggleLogStream"
+                                    title="Toggle log streaming">
+                                    <i class="bi" :class="logStreaming ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+                                </button>
+                                <button 
+                                    class="btn btn-outline-secondary" 
+                                    @click="clearLogs"
+                                    title="Clear logs">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="input-group input-group-sm">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="Filter logs (case sensitive)" 
+                                v-model="logFilter">
+                            <button 
+                                class="btn btn-outline-secondary" 
+                                type="button"
+                                @click="logFilter = ''"
+                                :disabled="!logFilter">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="log-container border rounded p-2 bg-dark">
+                        <div v-if="filteredLogs.length === 0" class="text-center text-muted my-5">
+                            <i class="bi bi-file-text display-4"></i>
+                            <p class="mt-3">No logs to display</p>
+                            <p v-if="logFilter" class="small">Try adjusting your filter criteria</p>
+                        </div>
+                        <div v-else ref="logView" class="log-view">
+                            <div v-for="(log, index) in filteredLogs" :key="index" class="log-line">
+                                <span class="log-timestamp" v-if="log.timestamp">{{ formatTimestamp(log.timestamp) }}</span>
+                                <span class="log-message" v-html="highlightFilteredText(log.message || 'No message')"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.6.1/dist/socket.io.min.js"></script>
+    <script>
+        // Debug Socket.IO events
+        console.log('Initializing Socket.IO debugging');
+        const debugSocket = io();
+        debugSocket.on('connect', () => {
+            console.log('DEBUG: Socket connected!');
+        });
+        debugSocket.on('disconnect', () => {
+            console.log('DEBUG: Socket disconnected!');
+        });
+        debugSocket.on('log_update', (data) => {
+            console.log('DEBUG: Log received:', data);
+        });
+        debugSocket.on('error', (data) => {
+            console.error('DEBUG: Socket error:', data);
+        });
+    </script>
+    <script src="{[ url_for('static', filename='js/app.js') ]}"></script>
+</body>
+</html> 

@@ -1,0 +1,34 @@
+
+Create an application with python and vue to achieve this prompt: 
+
+I need to develop an MVP to visualize Kubernetes pod logs (specifically GKE) using python with jinja2 template engine and vue for frontend. 
+The application should be simple but functional, allowing users to connect to a GKE cluster, list available pods, and view their logs in real-time.
+
+Please help me with:
+
+1. The Python + vue project structure. Scaffolding must be with uv and a pyproject.toml for dependencies and a venv like is explained on context doc.
+2. github repository is https://github.com/pedroid999/k8s-pretty-logger
+2. User interface code including:
+   - Kubernetes context selector
+   - Namespace and pod list
+   - Log viewer with basic filtering options
+   - Auto-scroll and ability to pause updates
+3. Logic for:
+   - GKE authentication using local credentials
+   - Communication with Kubernetes API to list pods
+   - Real-time log streaming
+4. Error handling and loading states
+5. A detailed README.md that includes:
+   - Prerequisites (dependencies, tools) for Mac, Windows, and Linux
+   - Step-by-step instructions for setting up the development environment
+   - Commands to start the application in development mode for each operating system
+   - Troubleshooting common installation issues
+   - Project file structure to help new developers navigate
+   - How to configure GKE connection
+   - **Quick Start section with single commands for users who just want to run the application immediately**
+
+
+The README.md should be especially detailed and friendly, with the goal that any developer can start the application in a few minutes, regardless of their operating system. 
+Include options for quick starts (all-in-one commands) and more detailed explanations for those who need to understand each step. For end users who just want to use the application, 
+there should be a prominent section at the top of the README with the quickest way to download and run the compiled application.
+

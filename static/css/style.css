@@ -1,0 +1,153 @@
+/* General styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+/* Pod list styles */
+.pod-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.pod-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pod-item:hover {
+    background-color: #f8f9fa;
+}
+
+.pod-item.active {
+    background-color: #e9ecef;
+    border-color: #0d6efd !important;
+}
+
+.pod-name {
+    font-weight: 500;
+}
+
+.container-status {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* Log viewer styles */
+.log-container {
+    height: calc(100vh - 250px);
+    min-height: 300px;
+    overflow: hidden;
+    position: relative;
+    background-color: #1e1e1e;
+}
+
+.log-view {
+    height: 100%;
+    overflow-y: auto;
+    font-family: "Courier New", monospace;
+    color: #f8f8f2;
+    padding: 10px;
+    line-height: 1.5;
+}
+
+.log-line {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding: 3px 0;
+    line-height: 1.4;
+    margin-bottom: 2px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+}
+
+.log-timestamp {
+    display: inline-block;
+    min-width: 100px;
+    font-size: 0.8em;
+    color: #6c757d;
+    user-select: none;
+    margin-right: 10px;
+    font-weight: 600;
+}
+
+.log-message {
+    white-space: pre-wrap;
+    color: #ddd;
+    font-family: monospace;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    padding-top: 3px;
+}
+
+/* Spring Boot specific log styling */
+.log-class {
+    color: #6a9cff;
+    margin-right: 5px;
+}
+
+.log-thread {
+    color: #b19cd9;
+    margin-right: 5px;
+}
+
+.colon-separator {
+    color: #777;
+    margin: 0 5px;
+}
+
+/* Status colors */
+.status-running, .status-true {
+    background-color: #28a745;
+}
+
+.status-pending {
+    background-color: #ffc107;
+}
+
+.status-terminated, .status-failed {
+    background-color: #dc3545;
+}
+
+.status-unknown, .status-false {
+    background-color: #6c757d;
+}
+
+.status-waiting {
+    background-color: #17a2b8;
+}
+
+/* Badge styles */
+.badge.status-running {
+    background-color: #28a745;
+}
+
+.badge.status-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge.status-terminated, .badge.status-failed {
+    background-color: #dc3545;
+}
+
+.badge.status-unknown {
+    background-color: #6c757d;
+}
+
+.badge.status-waiting {
+    background-color: #17a2b8;
+}
+
+/* Highlighted search text */
+.highlight {
+    background-color: #ffc107;
+    color: #343a40;
+    padding: 0 2px;
+    border-radius: 2px;
+} 
