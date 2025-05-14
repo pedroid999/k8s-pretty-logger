@@ -25,13 +25,13 @@ app = Flask(__name__,
             template_folder='api/templates')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_key_change_in_production')
 
-# Change Jinja2 template delimiters to avoid conflicts with Vue.js
-app.jinja_env.variable_start_string = '{['
-app.jinja_env.variable_end_string = ']}'
-app.jinja_env.block_start_string = '{%'
-app.jinja_env.block_end_string = '%}'
-app.jinja_env.comment_start_string = '{#'
-app.jinja_env.comment_end_string = '#}'
+# Use very distinct Jinja2 template delimiters to avoid conflicts with Vue.js
+app.jinja_env.variable_start_string = '{[{'
+app.jinja_env.variable_end_string = '}]}'
+app.jinja_env.block_start_string = '{[%'
+app.jinja_env.block_end_string = '%]}'
+app.jinja_env.comment_start_string = '{[#'
+app.jinja_env.comment_end_string = '#]}'
 
 # Initialize Socket.IO
 socketio = SocketIO(app, cors_allowed_origins="*", ping_timeout=60, ping_interval=25, max_http_buffer_size=1024 * 1024, async_mode='threading', logger=True, engineio_logger=True)

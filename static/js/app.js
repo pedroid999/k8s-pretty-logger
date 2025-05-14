@@ -26,6 +26,7 @@ const app = Vue.createApp({
             maxLogEntries: 5000, // Limit to prevent memory issues
             
             // UI state
+            darkMode: localStorage.getItem('darkMode') === 'true', // Initialize from local storage
             loading: {
                 contexts: false,
                 setContext: false,
@@ -48,14 +49,14 @@ const app = Vue.createApp({
             }
             
             return this.logs.filter(log => 
-                log.message.includes(this.logFilter)
+                log.message && log.message.includes(this.logFilter)
             );
         }
     },
     
     watch: {
-        // Auto-scroll to the bottom of logs when new entries are added
-        logs() {
+        // Watch filtered logs instead of logs directly to ensure autoscroll works when filtering
+        filteredLogs() {
             if (this.autoScroll) {
                 this.$nextTick(() => {
                     this.scrollToBottom();
@@ -70,14 +71,49 @@ const app = Vue.createApp({
                 
                 // Auto-start log streaming when a pod is selected
                 this.startLogStream();
+                
+                // Set up scroll event listener after the log view is created
+                this.$nextTick(() => {
+                    this.setupScrollListener();
+                });
             } else {
                 this.selectedContainer = null;
                 this.stopLogStream();
+            }
+        },
+        
+        // Update body class when dark mode changes
+        darkMode(newValue) {
+            localStorage.setItem('darkMode', newValue);
+            console.log('Dark mode toggled:', newValue);
+            // Apply dark mode class directly to the body element
+            if (newValue) {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
             }
         }
     },
     
     methods: {
+        // Toggle dark mode
+        toggleDarkMode() {
+            this.darkMode = !this.darkMode;
+            console.log('Toggle dark mode clicked, new state:', this.darkMode);
+        },
+        
+        // Setup scroll detection on the log view
+        setupScrollListener() {
+            const logView = this.$refs.logView;
+            if (logView) {
+                // Remove any existing listener first
+                logView.removeEventListener('scroll', this.checkScrollPosition);
+                // Add the scroll event listener
+                logView.addEventListener('scroll', this.checkScrollPosition);
+                console.log('Scroll listener attached to log view');
+            }
+        },
+        
         // Fetch available K8s contexts
         async loadContexts() {
             this.loading.contexts = true;
@@ -224,6 +260,9 @@ const app = Vue.createApp({
             });
             
             this.logStreaming = true;
+            
+            // Ensure autoscroll is enabled when starting a log stream
+            this.autoScroll = true;
         },
         
         // Stop log streaming
@@ -263,7 +302,27 @@ const app = Vue.createApp({
         scrollToBottom() {
             const logView = this.$refs.logView;
             if (logView) {
+                // Immediate scroll for better performance
                 logView.scrollTop = logView.scrollHeight;
+            }
+        },
+        
+        // Check if user has scrolled away from bottom of logs
+        checkScrollPosition() {
+            const logView = this.$refs.logView;
+            if (!logView) return;
+            
+            // If user scrolls up more than 50px from bottom, disable auto-scroll
+            const isNearBottom = logView.scrollHeight - logView.scrollTop - logView.clientHeight < 50;
+            
+            // Only change autoScroll if it's currently enabled and user has scrolled up
+            if (this.autoScroll && !isNearBottom) {
+                this.autoScroll = false;
+                console.log('Auto-scroll disabled due to manual scrolling');
+            } else if (!this.autoScroll && isNearBottom) {
+                // Re-enable auto-scroll when user scrolls back to bottom
+                this.autoScroll = true;
+                console.log('Auto-scroll re-enabled');
             }
         },
         
@@ -414,6 +473,13 @@ const app = Vue.createApp({
             // Add log entry to the logs array
             this.logs.push(data);
             
+            // Force scroll to bottom on each new log if autoScroll is enabled
+            if (this.autoScroll) {
+                this.$nextTick(() => {
+                    this.scrollToBottom();
+                });
+            }
+            
             // For debugging
             logsReceived++;
             if (logsReceived % 10 === 0) {
@@ -426,6 +492,27 @@ const app = Vue.createApp({
                 this.logs = this.logs.slice(-this.maxLogEntries);
             }
         });
+        
+        // Enable dark mode from localStorage if needed
+        if (this.darkMode) {
+            console.log('Initializing with dark mode enabled');
+            document.body.classList.add('dark-theme');
+        }
+    },
+    
+    // Vue lifecycle hook - when app is unmounted
+    unmounted() {
+        // Clean up scroll event listener
+        const logView = this.$refs.logView;
+        if (logView) {
+            logView.removeEventListener('scroll', this.checkScrollPosition);
+        }
+    },
+    
+    // Vue lifecycle hook - when app is updated
+    updated() {
+        // Setup scroll listener when the DOM is updated (in case logView is now available)
+        this.setupScrollListener();
     }
 });
 
@@ -441,6 +528,7 @@ window.debugLogs = function() {
     console.log("Log filter:", mountedApp.logFilter);
     return {
         logsLength: mountedApp.logs.length,
-        filteredLogsLength: mountedApp.filteredLogs.length
+        filteredLogsLength: mountedApp.filteredLogs.length,
+        darkMode: mountedApp.darkMode
     };
 }; 
