@@ -35,32 +35,28 @@ The script will:
 # Clone the repository
 git clone https://github.com/pedroid999/k8s-pretty-logger.git
 cd k8s-pretty-logger
-
-# Install dependencies and run (Mac/Linux)
-uv run app.py
-
-# Install dependencies and run (Windows)
-uv run app.py
 ```
 
-### Option 3: Manual Setup with pip and venv
+This option performs the same steps as the quickstart script manually:
 
 ```bash
-# Clone the repository
-git clone https://github.com/pedroid999/k8s-pretty-logger.git
-cd k8s-pretty-logger
+# Check if uv is installed
+command -v uv &> /dev/null
 
-# Mac/Linux
-python -m venv .venv
+# Create a virtual environment
+uv venv
+
+# Activate the virtual environment
 source .venv/bin/activate
-pip install -e .
-python app.py
 
-# Windows
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e .
-python app.py
+# Install dependencies
+uv sync
+
+# Create .env file from template if needed
+cp sample.env .env
+
+# Start the web interface
+uv run app.py
 ```
 
 Then open your browser at http://localhost:5000 to access the application.
