@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pytest-flask>=1.2.0", # Added pytest-flask
     "black>=23.0.0",
     "flake8>=6.0.0",
 ]

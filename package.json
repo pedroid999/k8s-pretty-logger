@@ -1,0 +1,14 @@
+{
+  "name": "k8s-pretty-logger-frontend",
+  "version": "1.0.0",
+  "description": "Frontend tests for K8s Pretty Logger",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
